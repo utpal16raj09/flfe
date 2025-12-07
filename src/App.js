@@ -1,24 +1,23 @@
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import UserList from "./components/UserList";
+import UserDetail from "./components/UserDetail";
+import GoogleCallback from "./pages/GoogleCallback";
+import "./App.css";
+import OAuthSuccess from "./components/OAuthSuccess";
+
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<UserList />} />
+        <Route path="/users/:id" element={<UserDetail />} />
+
+        {/* This route handles Google OAuth redirect */}
+        <Route path="/auth/google/callback" element={<GoogleCallback />} />
+        <Route path="/oauth/success" element={<OAuthSuccess />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
