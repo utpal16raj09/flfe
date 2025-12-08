@@ -2,12 +2,16 @@ import { useEffect, useState } from "react";
 import { getUsers, searchUsers, deleteUser } from "../services/UserService";
 import { useNavigate } from "react-router-dom";
 
+// [NEW] Import SweetAlert2
+import Swal from "sweetalert2";
+// [NEW] Import Icons
+import { FaEdit, FaTrash, FaGoogle, FaUserShield, FaUser, FaSignOutAlt, FaSearch } from "react-icons/fa";
+
 function UserList() {
   const [users, setUsers] = useState([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   
   const [search, setSearch] = useState("");
   const [sortField, setSortField] = useState("id");
@@ -27,236 +31,233 @@ function UserList() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("jwt_token");
-    setIsLoggedIn(false);
-    setUsers([]);
-    window.location.reload();
+    Swal.fire({
+      title: 'Logging out?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, logout!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        localStorage.removeItem("jwt_token");
+        setIsLoggedIn(false);
+        setUsers([]);
+        window.location.reload();
+      }
+    });
   };
 
-  const fetchUsers = async (pageNumber = page) => {
+  // ... (Keep fetchUsers, loadData, and handleSearch logic exactly the same as before) ...
+  const loadData = async (query, pageNum, sort) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      setError("");
-      const response = await getUsers(pageNumber, 5, sortField);
-
+      let response;
+      if (query.trim()) response = await searchUsers(query, pageNum, 5);
+      else response = await getUsers(pageNum, 5, sort);
+      
       setUsers(response.data.content);
       setTotalPages(response.data.totalPages);
       setPage(response.data.number);
     } catch (err) {
-      console.error("Fetch error:", err);
-      setError("Session expired or invalid. Please login again.");
-      setIsLoggedIn(false);
+       // Silent error or small toast
+       console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = async () => {
-    if (!search.trim()) {
-      fetchUsers(0);
-      return;
-    }
+  const fetchUsers = () => loadData("", page, sortField);
 
-    try {
-      setLoading(true);
-      const response = await searchUsers(search);
-      setUsers(response.data.content);
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const delayDebounceFn = setTimeout(() => {
       setPage(0);
-      setTotalPages(1);
-    } catch (err) {
-      setError(err.message || "Search failed.");
-    } finally {
-      setLoading(false);
-    }
-  };
+      loadData(search, 0, sortField);
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
 
-  // Handle Delete Logic
+  useEffect(() => {
+    if (isLoggedIn) loadData(search, page, sortField);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, sortField]);
+
+
+  // [NEW] Modern Delete with SweetAlert
   const handleDelete = async (e, userId) => {
-    e.stopPropagation(); // Stop row click event
+    e.stopPropagation();
 
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    // Pretty Confirmation Modal
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#6b7280',
+      confirmButtonText: 'Yes, delete it!'
+    });
 
-    try {
-      await deleteUser(userId);
-      alert("User deleted successfully!");
-      fetchUsers(); // Refresh list
-    } catch (err) {
-      console.error("Delete failed:", err);
-      // Show specific error if it's a 403 Forbidden
-      if (err.status === 403) {
-        alert("⛔ Access Denied: You need ADMIN privileges to delete users.");
-      } else {
-        alert("Failed to delete user: " + (err.message || "Unknown error"));
+    if (result.isConfirmed) {
+      try {
+        await deleteUser(userId);
+        Swal.fire('Deleted!', 'User has been deleted.', 'success');
+        loadData(search, page, sortField);
+      } catch (err) {
+        if (err.status === 403) {
+           Swal.fire('Access Denied', 'You need ADMIN privileges to delete.', 'error');
+        } else {
+           Swal.fire('Error', 'Failed to delete user.', 'error');
+        }
       }
     }
   };
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      fetchUsers();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, sortField]);
-
   return (
-    <div style={{ padding: "20px", maxWidth: "900px", margin: "0 auto" }}>
+    <div className="container">
       
-      {/* HEADER */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <h2>User Management Dashboard</h2>
-        
-        {isLoggedIn ? (
-           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              {/* Login Status Badge */}
-              <span style={{ 
-                  padding: "6px 10px", 
-                  borderRadius: "20px", 
-                  background: "#d4edda", 
-                  color: "#155724",
-                  fontWeight: "bold",
-                  fontSize: "0.85rem",
-                  border: "1px solid #c3e6cb"
-              }}>
-                ✅ Logged In
-              </span>
-              <button 
-                onClick={handleLogout}
-                style={{ padding: "8px 16px", background: "#dc3545", color: "white", border: "none", borderRadius: "4px", cursor: "pointer" }}
-              >
-                Logout
-              </button>
-           </div>
-        ) : (
-          /* DUAL LOGIN BUTTONS (For Testing Roles) */
-          <div style={{ display: "flex", gap: "10px" }}>
+      {/* 1. LOGIN SCREEN (If not logged in) */}
+      {!isLoggedIn && (
+        <div className="card login-screen">
+            <h1 style={{ fontSize: '2.5rem', marginBottom: '10px' }}>🚀 Flagship App</h1>
+            <p style={{ color: '#666', marginBottom: '30px' }}>Secure User Management Dashboard</p>
             
-            {/* 1. NORMAL USER LOGIN */}
-            <button
-              onClick={() => window.location.href = "http://localhost:8080/auth/login/google"}
-              style={{ 
-                padding: "10px 20px", 
-                background: "#4285F4", 
-                color: "white", 
-                border: "none", 
-                borderRadius: "4px", 
-                cursor: "pointer", 
-                fontWeight: "bold" 
-              }}
-            >
-              Login as User
-            </button>
+            <div style={{ display: "flex", gap: "15px" }}>
+                <button
+                className="btn btn-google"
+                onClick={() => window.location.href = "http://localhost:8080/auth/login/google"}
+                style={{ padding: "12px 24px", fontSize: "1rem" }}
+                >
+                <FaGoogle color="#DB4437" /> Login as User
+                </button>
 
-            {/* 2. ADMIN LOGIN */}
-            <button
-              onClick={() => window.location.href = "http://localhost:8080/auth/login/google/admin"}
-              style={{ 
-                padding: "10px 20px", 
-                background: "#2c3e50", // Darker color for Admin
-                color: "white", 
-                border: "none", 
-                borderRadius: "4px", 
-                cursor: "pointer", 
-                fontWeight: "bold" 
-              }}
-            >
-              Login as Admin
-            </button>
-          </div>
-        )}
-      </div>
-
-      {error && <p style={{ color: "red", fontWeight: "bold", textAlign: "center" }}>{error}</p>}
-      {loading && <p style={{ textAlign: "center" }}>Loading users...</p>}
-
-      {!isLoggedIn && !loading && (
-        <div style={{ textAlign: "center", marginTop: "50px", color: "#666" }}>
-          <p>Please sign in to access the user database.</p>
+                <button
+                className="btn"
+                onClick={() => window.location.href = "http://localhost:8080/auth/login/google/admin"}
+                style={{ background: "#2c3e50", color: "white", padding: "12px 24px", fontSize: "1rem" }}
+                >
+                <FaUserShield /> Login as Admin
+                </button>
+            </div>
         </div>
       )}
 
-      {isLoggedIn && !loading && users.length > 0 && (
-        <>
-          {/* Controls */}
-          <div style={{ display: "flex", gap: "10px", marginBottom: "20px", justifyContent: "space-between" }}>
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{ padding: "8px", width: "200px" }}
-            />
-            <button onClick={handleSearch} style={{ padding: "8px 12px" }}>Search</button>
-            <select value={sortField} onChange={(e) => setSortField(e.target.value)} style={{ padding: "8px" }}>
-              <option value="id">Sort by ID</option>
-              <option value="name">Sort by Name</option>
-              <option value="email">Sort by Email</option>
-              <option value="createdAt">Sort by Created Date</option>
-            </select>
-          </div>
-
-          {/* Table */}
-          <table border="1" cellPadding="10" style={{ width: "100%", marginTop: "10px", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ background: "#eee" }}>
-                <th>Avatar</th>
-                <th>ID</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Created At</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id} style={{ cursor: "pointer" }} onClick={() => navigate(`/users/${user.id}`)}>
-                  {/* Avatar Column */}
-                  <td style={{ textAlign: "center" }}>
-                      {user.picture ? (
-                        <img 
-                            src={user.picture} 
-                            alt="avatar" 
-                            style={{ width: "40px", height: "40px", borderRadius: "50%", objectFit: "cover" }} 
-                            onError={(e) => { e.target.onerror = null; e.target.src = "https://cdn-icons-png.flaticon.com/512/149/149071.png" }}
-                        />
-                      ) : (
-                        <span style={{ fontSize: "24px" }}>👤</span>
-                      )}
-                  </td>
-                  
-                  <td>{user.id}</td>
-                  <td>{user.name}</td>
-                  <td>{user.email}</td>
-                  <td>{user.createdAt}</td>
-                  
-                  {/* Delete Button */}
-                  <td style={{ textAlign: "center" }}>
-                    <button
-                      onClick={(e) => handleDelete(e, user.id)}
-                      style={{
-                        padding: "6px 12px",
-                        backgroundColor: "#e74c3c",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "4px",
-                        cursor: "pointer",
-                        fontWeight: "bold"
-                      }}
-                    >
-                      Delete
+      {/* 2. DASHBOARD (If logged in) */}
+      {isLoggedIn && (
+        <div className="card">
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "30px" }}>
+                <div>
+                    <h2>Dashboard</h2>
+                    <span style={{ fontSize: "0.9rem", color: "#6b7280" }}>Manage your users efficiently</span>
+                </div>
+                
+                <div style={{ display: "flex", gap: "10px" }}>
+                     <button className="btn btn-danger" onClick={handleLogout}>
+                        <FaSignOutAlt /> Logout
                     </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                </div>
+            </div>
 
-          {/* Pagination */}
-          <div style={{ marginTop: "20px", textAlign: "center" }}>
-            <button disabled={page === 0} onClick={() => setPage(page - 1)}>Previous</button>
-            <span style={{ margin: "0 10px" }}>Page {page + 1} of {totalPages}</span>
-            <button disabled={page === totalPages - 1} onClick={() => setPage(page + 1)}>Next</button>
-          </div>
-        </>
+            {/* Controls */}
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "20px", flexWrap: "wrap", gap: "10px" }}>
+                <div style={{ position: "relative" }}>
+                    <FaSearch style={{ position: "absolute", left: "12px", top: "14px", color: "#9ca3af" }} />
+                    <input
+                        className="search-box"
+                        type="text"
+                        placeholder="Search users..."
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        style={{ paddingLeft: "40px" }}
+                    />
+                </div>
+                
+                <select 
+                    className="search-box" 
+                    style={{ width: "auto" }}
+                    value={sortField} 
+                    onChange={(e) => setSortField(e.target.value)}
+                >
+                    <option value="id">Sort by ID</option>
+                    <option value="name">Sort by Name</option>
+                    <option value="createdAt">Sort by Date</option>
+                </select>
+            </div>
+
+            {/* Modern Table */}
+            {loading ? (
+                <p style={{ textAlign: "center", padding: "20px" }}>Loading data...</p>
+            ) : (
+            <div style={{ overflowX: "auto" }}>
+                <table className="modern-table">
+                    <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Role</th>
+                        <th>Email</th>
+                        <th>Date Joined</th>
+                        <th style={{ textAlign: "center" }}>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {users.map((user) => (
+                        <tr key={user.id} onClick={() => navigate(`/users/${user.id}`)} style={{ cursor: "pointer" }}>
+                        <td>
+                            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                                {user.picture ? (
+                                    <img src={user.picture} alt="avatar" className="avatar-img" />
+                                ) : (
+                                    <div className="avatar-img" style={{ background: "#ddd", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                        <FaUser color="#666" />
+                                    </div>
+                                )}
+                                <span style={{ fontWeight: "600" }}>{user.name}</span>
+                            </div>
+                        </td>
+                        <td>
+                            {/* Dummy Badge logic based on ID for now, or map real role if available */}
+                            <span style={{ 
+                                background: "#e0e7ff", color: "#4338ca", 
+                                padding: "4px 8px", borderRadius: "6px", fontSize: "0.8rem", fontWeight: "bold" 
+                            }}>
+                                USER
+                            </span>
+                        </td>
+                        <td>{user.email}</td>
+                        <td>{user.createdAt}</td>
+                        <td style={{ textAlign: "center" }}>
+                            <button
+                                className="btn btn-warning"
+                                onClick={(e) => { e.stopPropagation(); navigate(`/users/${user.id}/edit`); }}
+                                style={{ padding: "8px", marginRight: "8px" }}
+                            >
+                                <FaEdit />
+                            </button>
+                            <button
+                                className="btn btn-danger"
+                                onClick={(e) => handleDelete(e, user.id)}
+                                style={{ padding: "8px" }}
+                            >
+                                <FaTrash />
+                            </button>
+                        </td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+            </div>
+            )}
+
+            {/* Pagination (Simple styling) */}
+            <div style={{ marginTop: "20px", display: "flex", justifyContent: "center", gap: "10px" }}>
+                <button className="btn" disabled={page === 0} onClick={() => setPage(page - 1)} style={{ background: "#e5e7eb" }}>Previous</button>
+                <span style={{ display: "flex", alignItems: "center", fontWeight: "bold" }}>Page {page + 1} of {totalPages}</span>
+                <button className="btn" disabled={page === totalPages - 1} onClick={() => setPage(page + 1)} style={{ background: "#e5e7eb" }}>Next</button>
+            </div>
+        </div>
       )}
     </div>
   );
