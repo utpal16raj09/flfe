@@ -1,4 +1,5 @@
 import api from "./api";
+import axios from "axios"; // [NEW] Needed for file upload handling
 
 // Fetch paginated users
 export const getUsers = async (page = 0, size = 10, sort = "id") => {
@@ -59,5 +60,36 @@ export const deleteUser = async (id) => {
     return response.data;
   } catch (error) {
     throw error.response?.data || { message: "Failed to delete user" };
+  }
+};
+
+// ... existing imports
+
+// [NEW] Admin Stats
+export const getAdminStats = async () => {
+  const response = await api.get("/admin/stats");
+  return response.data; // ApiResponse<DashboardStatsDTO>
+};
+
+// [NEW] File Upload Function
+export const uploadFile = async (file) => {
+  // We use direct axios call here to manually ensure Multipart headers are set correctly
+  // and to avoid any JSON-enforcing interceptors in the main 'api' instance
+  const token = localStorage.getItem("jwt_token");
+  const FILE_API_URL = "http://localhost:8080/api/files"; 
+  
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await axios.post(`${FILE_API_URL}/upload`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        "Authorization": `Bearer ${token}`
+      },
+    });
+    return response.data; // Returns { success: true, data: { url: "..." } }
+  } catch (error) {
+    throw error.response?.data || { message: "File upload failed" };
   }
 };

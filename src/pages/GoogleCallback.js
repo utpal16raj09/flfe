@@ -1,32 +1,45 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function GoogleCallback() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { login, user } = useAuth(); // [IMPORTANT] Grab 'user' state too
+  const processedRef = useRef(false);
 
+  // 1. First Effect: Capture Token & Login
   useEffect(() => {
-    // 1. Get the token from the URL (e.g., ?token=eyJ...)
+    if (processedRef.current) return; // Prevent double-run
+    processedRef.current = true;
+
     const token = searchParams.get("token");
-
     if (token) {
-      console.log("✅ OAuth Success! Token received:", token);
-
-      // 2. Save token to LocalStorage
-      localStorage.setItem("jwt_token", token);
-
-      // 3. Redirect user to the Home Page (or Dashboard)
-      navigate("/");
+      console.log("Token found, logging in...");
+      login(token); // This updates the Context State
     } else {
-      console.error("❌ No token found in URL");
-      navigate("/");
+      navigate("/"); // No token? Go home.
     }
-  }, [navigate, searchParams]);
+  }, [searchParams, login, navigate]);
+
+  // 2. Second Effect: Watch for 'user' state, THEN Redirect
+  // This waits until the login is actually finished before moving you.
+  useEffect(() => {
+    if (user) {
+      console.log("User logged in successfully! Redirecting...");
+      // Small timeout to ensure browser storage is ready
+      setTimeout(() => {
+        navigate("/");
+      }, 100);
+    }
+  }, [user, navigate]);
 
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      <h2>🔄 Logging you in...</h2>
-      <p>Please wait while we verify your Google account.</p>
+    <div className="container" style={{ textAlign: "center", marginTop: "100px" }}>
+       <div className="card">
+         <h2>🔄 Finalizing Login...</h2>
+         <p>You are logged in! Redirecting you to the dashboard...</p>
+       </div>
     </div>
   );
 }

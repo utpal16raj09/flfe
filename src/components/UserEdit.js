@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { getUserById, updateUser } from "../services/UserService";
+import { getUserById, updateUser, uploadFile } from "../services/UserService"; 
 import { useNavigate, useParams } from "react-router-dom";
-import Swal from "sweetalert2"; // [NEW] Import SweetAlert
+import Swal from "sweetalert2"; 
+import { FaCamera } from "react-icons/fa"; 
 
 function UserEdit() {
   const { id } = useParams();
@@ -10,6 +11,11 @@ function UserEdit() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState(""); 
+  
+  // Picture State
+  const [picture, setPicture] = useState(""); 
+  const [uploading, setUploading] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   
@@ -31,8 +37,17 @@ function UserEdit() {
   useEffect(() => {
     // 1. Security Check
     if (!checkAdminRole()) {
-      setError("⛔ Access Denied: You must be an ADMIN to view this page.");
+      const msg = "⛔ Access Denied: You must be an ADMIN to view this page.";
+      setError(msg);
       setIsAdmin(false);
+      
+      // [NEW] Immediate Alert for Access Denied
+      Swal.fire({
+        icon: 'error',
+        title: 'Access Denied',
+        text: 'You do not have permission to edit users.',
+        confirmButtonColor: '#d33'
+      });
       return; 
     }
 
@@ -46,6 +61,7 @@ function UserEdit() {
         const user = response.data;
         setName(user.name);
         setEmail(user.email);
+        setPicture(user.picture); // Load existing picture
       } catch (err) {
         setError("Failed to load user data.");
       } finally {
@@ -55,22 +71,57 @@ function UserEdit() {
     fetchUser();
   }, [id]);
 
+  // Handle File Selection
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+        // Upload immediately to get the URL
+        const response = await uploadFile(file);
+        const fileUrl = response.data.url;
+        setPicture(fileUrl); // Update Preview immediately
+    } catch (error) {
+        Swal.fire("Upload Failed", "Could not upload image", "error");
+    } finally {
+        setUploading(false);
+    }
+  };
+
+  // [UPDATED] Submit Handler with Confirmation
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 1. Ask for confirmation first
+    const result = await Swal.fire({
+      title: 'Save Changes?',
+      text: "Are you sure you want to update this user?",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#3085d6', // Blue confirm button
+      cancelButtonColor: '#d33',     // Red cancel button
+      confirmButtonText: 'Yes, update it!'
+    });
+
+    // 2. If user cancels, stop here
+    if (!result.isConfirmed) return;
+
+    // 3. Proceed with Update
     setError("");
     setLoading(true);
 
     try {
-      const userData = { name, email };
+      const userData = { name, email, picture }; // Include picture in update
       if (password.trim()) {
         userData.password = password;
       }
       await updateUser(id, userData);
       
-      // [UPDATED] Pretty Success Alert
+      // 4. Success Alert
       await Swal.fire({
-        title: 'Success!',
-        text: 'User updated successfully.',
+        title: 'Updated!',
+        text: 'User details have been saved successfully.',
         icon: 'success',
         timer: 1500,
         showConfirmButton: false
@@ -118,6 +169,34 @@ function UserEdit() {
       <div className="card">
         <h2 style={{ textAlign: "center", marginBottom: "30px" }}>✏️ Edit User</h2>
 
+        {/* Profile Picture Section */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "20px" }}>
+            <div style={{ position: "relative", width: "100px", height: "100px" }}>
+                <img 
+                    src={picture || "https://cdn-icons-png.flaticon.com/512/149/149071.png"} 
+                    alt="Profile" 
+                    style={{ width: "100%", height: "100%", borderRadius: "50%", objectFit: "cover", border: "3px solid #e2e8f0" }}
+                />
+                <label htmlFor="fileInput" style={{ 
+                    position: "absolute", bottom: "0", right: "0", 
+                    background: "var(--primary)", color: "white", 
+                    borderRadius: "50%", width: "32px", height: "32px", 
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", boxShadow: "0 2px 4px rgba(0,0,0,0.2)"
+                }}>
+                    <FaCamera size={14} />
+                </label>
+                <input 
+                    id="fileInput" 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleFileChange} 
+                    style={{ display: "none" }} 
+                />
+            </div>
+        </div>
+        {uploading && <p style={{textAlign:"center", fontSize:"0.8rem", color:"#666", marginBottom:"15px"}}>Uploading...</p>}
+
         {error && <p style={{ color: "var(--danger)", textAlign: "center", fontWeight: "bold" }}>{error}</p>}
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -125,7 +204,7 @@ function UserEdit() {
             <div>
             <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>Name</label>
             <input
-                className="search-box" // Reusing the modern input style
+                className="search-box"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -162,7 +241,7 @@ function UserEdit() {
             <button 
                 type="submit" 
                 className="btn"
-                disabled={loading}
+                disabled={loading || uploading}
                 style={{ flex: 1, justifyContent: "center", background: "var(--success)", color: "white" }}
             >
                 {loading ? "Saving..." : "Save Changes"}
