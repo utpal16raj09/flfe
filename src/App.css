@@ -1,0 +1,231 @@
+/* Import Modern Font */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --primary: #6366f1;       /* Indigo 500 */
+  --primary-glow: rgba(99, 102, 241, 0.4);
+  --danger: #f43f5e;        /* Rose 500 */
+  --warning: #f59e0b;       /* Amber 500 */
+  --success: #10b981;       /* Emerald 500 */
+  
+  --dark: #0f172a;          /* Slate 900 */
+  --text-secondary: #64748b; /* Slate 500 */
+  --surface: #ffffff;
+  
+  /* Glassmorphism Variables */
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: 1px solid rgba(255, 255, 255, 0.5);
+  --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  /* Advanced Mesh Gradient Background */
+  background-color: #f3f4f6;
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+  background-size: cover;
+  background-attachment: fixed;
+  color: var(--dark);
+  margin: 0;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* --- Container & Animations --- */
+.container {
+  max-width: 1100px;
+  margin: 60px auto;
+  padding: 0 20px;
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Glass Card --- */
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: var(--glass-border);
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: var(--glass-shadow);
+  transition: transform 0.3s ease;
+}
+
+/* --- Headers --- */
+h2 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--dark);
+  margin-bottom: 24px;
+  font-size: 1.8rem;
+  background: linear-gradient(135deg, #1e293b 0%, #475569 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* --- Modern Buttons --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary { 
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  box-shadow: 0 4px 15px var(--primary-glow);
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--primary-glow);
+}
+
+.btn-danger { 
+  background: linear-gradient(135deg, #fb7185 0%, #e11d48 100%);
+  color: white; 
+}
+.btn-danger:hover {
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.3);
+}
+
+.btn-warning {
+  background: white;
+  color: var(--warning);
+  border: 1px solid #fcd34d;
+}
+.btn-warning:hover {
+  background: #fffbeb;
+}
+
+.btn-google {
+  background: white;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.btn-google:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+/* --- Advanced Table --- */
+.modern-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px; /* Floating rows effect */
+  margin-top: 20px;
+}
+
+.modern-table thead th {
+  background: transparent;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  padding: 0 20px 10px 20px;
+  border: none;
+}
+
+.modern-table tbody tr {
+  background: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modern-table tbody tr:hover {
+  transform: scale(1.005);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+  z-index: 10;
+  position: relative;
+}
+
+.modern-table td {
+  padding: 20px;
+  color: var(--dark);
+  font-weight: 500;
+  border: none;
+}
+
+/* Rounded corners for first and last cells in a row */
+.modern-table td:first-child { border-top-left-radius: 12px; border-bottom-left-radius: 12px; }
+.modern-table td:last-child { border-top-right-radius: 12px; border-bottom-right-radius: 12px; }
+
+/* Avatar with Ring */
+.avatar-img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+.avatar-img:hover {
+  transform: scale(1.1);
+}
+
+/* --- Sleek Inputs --- */
+.search-box {
+  padding: 12px 20px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  width: 300px;
+  font-size: 0.95rem;
+  color: var(--dark);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.search-box:focus {
+  border-color: var(--primary);
+  background: white;
+  box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+/* --- Login Screen --- */
+.login-screen {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.85); /* Slightly more opaque for login */
+}
+
+.login-screen h1 {
+  font-size: 3rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 0.5rem;
+}

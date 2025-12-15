@@ -1,0 +1,16 @@
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\auth\AuthController.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\auth\AuthService.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\auth\dto\AuthResponse.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\auth\dto\LoginRequest.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\auth\dto\SignupRequest.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\BackendApplication.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\config\CustomOAuth2UserService.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\config\JwtAuthFilter.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\config\OAuth2SuccessHandler.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\config\SecurityConfig.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\email\EmailService.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\jwt\JwtService.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\user\AuthProvider.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\user\Role.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\user\User.java
+C:\Users\subha\Desktop\flfe-main\flfe-main\backend\src\main\java\com\flfe\user\UserRepository.java

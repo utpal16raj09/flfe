@@ -1,0 +1,16 @@
+com\flfe\config\SecurityConfig.class
+com\flfe\auth\AuthService.class
+com\flfe\config\JwtAuthFilter.class
+com\flfe\email\EmailService.class
+com\flfe\config\CustomOAuth2UserService.class
+com\flfe\user\User.class
+com\flfe\auth\dto\SignupRequest.class
+com\flfe\config\OAuth2SuccessHandler.class
+com\flfe\auth\dto\LoginRequest.class
+com\flfe\user\Role.class
+com\flfe\auth\AuthController.class
+com\flfe\auth\dto\AuthResponse.class
+com\flfe\jwt\JwtService.class
+com\flfe\BackendApplication.class
+com\flfe\user\AuthProvider.class
+com\flfe\user\UserRepository.class
